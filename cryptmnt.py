@@ -16,9 +16,11 @@ def mountDevice():
 def startDeluged():
     s = str(input('Start deluge daemon? (Y/n): '))
     if s.lower() in ['y', 'ye', 'ya', 'yes']:
-        os.system('deluged ')
+        os.system('deluged &> /dev/null')
+        print("Deluged started!")
     else:
-        return print("Deluge daemon not started!")
+        print("Deluged not started!")
+        return
 
 def decryptDevice(d, m):
     os.system('/usr/bin/sudo cryptsetup luksOpen ' + d + ' cryptmnt')

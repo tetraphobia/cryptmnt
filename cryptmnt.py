@@ -1,18 +1,20 @@
 #!/usr/bin/env python3
 import subprocess
+import re
 from os.path import exists
 
 DEFAULT_MOUNT_POINT = "/home/valkyrie/malygos"
 INPUT_1 = "\nInput a number to select the desired block device: "
 
-def main():
-    block_devices = subprocess.Popen("sudo blkid | grep crypto | awk '{print $1}'", shell=True, stdout=subprocess.PIPE)
-    bd_arr = block_devices.communicate()[0].decode('utf-8').split(":\n")
 
-    for n, x in zip(bd_arr, range(1, len(bd_arr))):
+def main():
+    bd_str = subprocess.Popen(['/usr/bin/sudo', 'blkid'], stdout=subprocess.PIPE).communicate()[0].decode('utf-8')
+    bd_arr = re.findall(r"^(.*):.*crypto_LUKS.*$", bd_str, re.MULTILINE)
+
+    for n, x in zip(bd_arr, range(1, len(bd_arr) + 1)):
         print(f"{x}. {n}")
 
-    if len(bd_arr) > 2:
+    if len(bd_arr) > 1:
         while True:
             selected_device = input(INPUT_1)
             try:
@@ -51,8 +53,10 @@ def main():
 
 
 def do_decryption(bd_arr, mount, device):
-    subprocess.run(f"/usr/bin/sudo cryptsetup luksOpen {bd_arr[device-1]} cryptmnt-{bd_arr[device-1].split('/')[2]}", shell=True)
-    subprocess.run(f"/usr/bin/sudo mount /dev/mapper/cryptmnt-{bd_arr[device-1].split('/')[2]} {mount}", shell=True)
+    pass
+    subprocess.run(['/usr/bin/sudo', 'cryptsetup', 'luksOpen', bd_arr[device-1], f"cryptmnt-{bd_arr[device-1].split('/')[2]}"])
+    subprocess.run(['/usr/bin/sudo', 'mount', f"/dev/mapper/cryptmnt-{bd_arr[device-1].split('/')[2]}", mount])
+
 
 if __name__ == '__main__':
     main()

@@ -9,10 +9,10 @@ INPUT_1 = "\nInput a number to select the desired block device: "
 
 def main():
     bd_str = subprocess.Popen(['/usr/bin/sudo', 'blkid'], stdout=subprocess.PIPE).communicate()[0].decode('utf-8')
-    bd_arr = re.findall(r"^(.*):.*crypto_LUKS.*$", bd_str, re.MULTILINE)
+    bd_arr = re.findall(r"^(.*):.*crypto_LUKS.*PARTLABEL=\"(.*)\" .*$", bd_str, re.MULTILINE)
 
     for n, x in zip(bd_arr, range(1, len(bd_arr) + 1)):
-        print(f"{x}. {n}")
+        print(f"{x}. {n[0]} \"{n[1]}\"")
 
     if len(bd_arr) > 1:
         while True:
@@ -20,11 +20,11 @@ def main():
             try:
                 selected_device = int(selected_device)
 
-                if selected_device not in range(1, len(bd_arr)):
+                if selected_device not in range(1, len(bd_arr[0])):
                     raise KeyError
 
             except ValueError:
-                print(f'Please input an integer. You input: {type(selected_device)}')
+                print(f'Please input an integer from 1 to {len(bd_arr[0])}.')
                 continue
 
             except KeyError:
@@ -44,7 +44,7 @@ def main():
             if not exists(mount_point):
                 raise NameError
             else:
-                do_decryption(bd_arr, mount_point, selected_device)
+                do_decryption(bd_arr[0], mount_point, selected_device)
 
         except NameError:
             print("Path does not exist!")
@@ -53,7 +53,6 @@ def main():
 
 
 def do_decryption(bd_arr, mount, device):
-    pass
     subprocess.run(['/usr/bin/sudo', 'cryptsetup', 'luksOpen', bd_arr[device-1], f"cryptmnt-{bd_arr[device-1].split('/')[2]}"])
     subprocess.run(['/usr/bin/sudo', 'mount', f"/dev/mapper/cryptmnt-{bd_arr[device-1].split('/')[2]}", mount])
 
